@@ -103,17 +103,26 @@ function del(key){
   });
 }
   function getAll(){
-    return ready.then(function(){
-      return new Promise(function(resolve,reject){
-        var tx=db.transaction(storeName,'readonly');
-        var store=tx.objectStore(storeName);
-        var keys=store.getAllKeys(),vals=store.getAll();
-        vals.onsuccess=function(){keys.onsuccess=function(){
-          var obj={};keys.result.forEach(function(k,i){obj[k]=vals.result[i]});resolve(obj)
-        }};
-        vals.onerror=function(){reject(vals.error)};
-      });
+  return ready.then(function(){
+    return new Promise(function(resolve,reject){
+      var tx=db.transaction(storeName,'readonly');
+      var store=tx.objectStore(storeName);
+      var keysReq=store.getAllKeys();
+      var valsReq=store.getAll();
+      var keysDone=false,valsDone=false,keysRes,valsRes;
+      function check(){
+        if(keysDone&&valsDone){
+          var obj={};
+          keysRes.forEach(function(k,i){obj[k]=valsRes[i]});
+          resolve(obj);
+        }
+      }
+      keysReq.onsuccess=function(){keysDone=true;keysRes=keysReq.result;check()};
+      valsReq.onsuccess=function(){valsDone=true;valsRes=valsReq.result;check()};
+      keysReq.onerror=function(){reject(keysReq.error)};
+      valsReq.onerror=function(){reject(valsReq.error)};
     });
+  });
   }
   return {ready:ready,put:put,del:del,getAll:getAll,get db(){return db}};
 })();
