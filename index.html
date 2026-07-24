@@ -119,7 +119,7 @@ function del(key){
 })();
 
 // ===== 劫持 localStorage，让所有读写同时走 IndexedDB =====
-var _idbReady=true;_removeGate(); var _idbData={};
+var _idbReady=false; var _idbData={}; function _removeGate(){var g=document.getElementById('_loadingGate');if(g&&g.parentNode)g.parentNode.removeChild(g)}
 var _origSetItem=localStorage.setItem.bind(localStorage);
 var _origRemoveItem=localStorage.removeItem.bind(localStorage);
 var _origGetItem=localStorage.getItem.bind(localStorage);
