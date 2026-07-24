@@ -540,11 +540,11 @@ function renderForumBoard(){
             +'<div style="font-size:15px;line-height:1.6;color:#333;margin-bottom:4px">'+escapeHtml(p.content||'')+'</div>'
       +(p.images&&p.images.length?'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">'+p.images.map(img=>'<img src="'+img+'" style="'+(p.images.length===1?'width:100%;max-width:200px;height:auto':'width:76px;height:76px;object-fit:cover')+';border-radius:6px">').join('')+'</div>':'')
       +interHtml
-      +'<div style="display:flex;border-top:1px solid #f0f0f0;margin-top:10px;padding-top:2px"><div class="fbar-fwd" style="flex:1;text-align:center;padding:8px 0;font-size:13px;color:#666;cursor:pointer">↗ 转发</div><div class="fbar-cmt" style="flex:1;text-align:center;padding:8px 0;font-size:13px;color:#666;cursor:pointer;border-left:1px solid #f0f0f0;border-right:1px solid #f0f0f0">💬 评论</div><div class="fbar-like" style="flex:1;text-align:center;padding:8px 0;font-size:13px;color:'+(liked?'#e6435a':'#666')+';cursor:pointer">'+(liked?'♥':'♡')+' 点赞</div><div class="fbar-refresh" style="flex:1;text-align:center;padding:8px 0;font-size:13px;color:#764ba2;cursor:pointer;border-left:1px solid #f0f0f0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin=" style="vertical-align:-2px;margin-right:2px"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6M5.6 5.6l4.2 4.2m4.2 4.2l4.2 4.2M1 12h6m6 0h6M5.6 18.4l4.2-4.2m4.2-4.2l4.2-4.2"/></svg>刷新</div></div>'
+      +'<div style="display:flex;border-top:1px solid #f0f0f0;margin-top:10px;padding-top:2px"><div class="fbar-fwd" style="flex:1;text-align:center;padding:8px 0;font-size:13px;color:#666;cursor:pointer">↗ 转发</div><div class="fbar-cmt" style="flex:1;text-align:center;padding:8px 0;font-size:13px;color:#666;cursor:pointer;border-left:1px solid #f0f0f0;border-right:1px solid #f0f0f0">💬 评论</div><div class="fbar-like" style="flex:1;text-align:center;padding:8px 0;font-size:13px;color:'+(liked?'#e6435a':'#666')+';cursor:pointer">'+(liked?'♥':'♡')+' 点赞</div><div class="fbar-refresh" style="flex:1;text-align:center;padding:8px 0;font-size:13px;color:#764ba2;cursor:pointer;border-left:1px solid #f0f0f0">☆ 刷新</div></div>'
       +'<div class="fdel-btn" style="display:none;position:absolute;top:10px;right:10px;background:#FF3B30;color:#fff;border-radius:6px;padding:4px 12px;font-size:13px;cursor:pointer">删除</div>';
     // 点赞
     card.querySelector('.fbar-like').onclick=(e)=>{e.stopPropagation();const ps=getForumPosts(mid);const po=ps[i];if(!po.likes)po.likes=[];const idx=po.likes.indexOf(myName);if(idx>=0)po.likes.splice(idx,1);else po.likes.push(myName);saveForumPosts(mid,ps);renderForumBoard()};// 刷新评论
-card.querySelector('.fbar-refresh').onclick=async(e)=>{e.stopPropagation();const btn=e.currentTarget;const origHtml=btn.innerHTML;btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-2px;animation:spin .7s linear infinite"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>加载中';btn.style.pointerEvents='none';try{await forumRefreshComments(i)}catch(e){console.error(e)}finally{btn.innerHTML=origHtml;btn.style.pointerEvents='auto'}};
+card.querySelector('.fbar-refresh').onclick=async(e)=>{e.stopPropagation();const btn=e.currentTarget;const origHtml=btn.innerHTML;btn.innerHTML='<span style="display:inline-block;animation:spin .7s linear infinite">✦</span> 加载中';btn.style.pointerEvents='none';try{await forumRefreshComments(i)}catch(e){console.error(e)}finally{btn.innerHTML=origHtml;btn.style.pointerEvents='auto'}};
     // 评论
     card.querySelector('.fbar-cmt').onclick=(e)=>{e.stopPropagation();forumComment(i)};
     // 转发
@@ -568,7 +568,7 @@ async function genForumPosts(){
   const c=document.getElementById('forumBoardContent');
   c.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;color:#999"><div style="width:36px;height:36px;border:3px solid #eee;border-top-color:#764ba2;border-radius:50%;animation:spin .7s linear infinite;margin-bottom:16px"></div>正在生成帖子…</div>';
   const fs=getFriends();const pe=getActivePersona();const myName=forumMyName();
-  let charInfo=fs.map(f=>{const mem=getMemories(f.id).slice(0,2).map(x=>x.content).join(' ');const chat=getChatHistory(f.id).slice(-4).map(x=>x.role==='user'?myName+':'+x.content:f.name+':'+x.content).join(' | ');return f.name+'：'+(f.persona||'无特别设定').slice(0,120)+(chat?' [最近:'+chat.slice(0,100)+']':'')+(mem?' [记忆:'+mem.slice(0,80)+']':'')}).join('\n');
+  let charInfo=fs.map(f=>{const mem=getMemories(f.id).slice(0,2).map(x=>x.content).join(' ');const chat=getChatHistory(f.id).slice(-4).map(x=>x.role==='user'?myName+':'+x.content:f.name+':'+x.content).join(' | ');return f.name+'（真名）：'+(f.persona||'无特别设定').slice(0,150)+(chat?' [最近:'+chat.slice(0,100)+']':'')+(mem?' [记忆:'+mem.slice(0,80)+']':'')}).join('\n');
   const gp=getGlobalPrompts().sort((a,b)=>(a.order||99)-(b.order||99)).filter(p=>p.enabled).map(p=>p.content).join('\n');
   const wb=getWbContent([],'system_top');
   let sys='';
@@ -578,14 +578,15 @@ async function genForumPosts(){
   sys+='[板块世界观]\n'+(m.world||'无特别设定')+'\n\n';
   if(charInfo)sys+='[板块里可能出现的熟人（可选出现，可不出现）]\n'+charInfo+'\n\n';
   if(pe)sys+='[这些熟人共同认识的人] '+myName+(pe.desc?' ('+pe.desc+')':'')+'\n\n';
-  sys+='请生成6-8条符合板块世界观的帖子，规则：\n';
+    sys+='请生成6-8条符合板块世界观的帖子，规则：\n';
 sys+='1. 每条帖子像真人发帖，自然口语，1-4句\n';
 sys+='2. 发帖人以论坛里的陌生网友为主（占大头），上面列出的熟人也可以发帖但只占少数（1-2条）\n';
-sys+='3. 所有人都用论坛网名发帖，包括熟人也起一个符合其性格的网名，营造真实论坛氛围\n';
+sys+='3. 所有人都用论坛网名发帖。熟人的网名规则：如果人设里明确写了ta的网名/昵称/ID，就直接用；如果人设里没写，就根据ta的性格和人设编一个贴切的网名。同一个熟人多次出现要用同一个网名\n';
 sys+='4. 内容紧扣板块世界观「'+m.name+'」\n';
-sys+='5. 每条帖子配 2-6 条评论、一些点赞，评论者以陌生网友为主，评论符合各自性格\n';
-sys+='6. 绝对不能以'+myName+'的身份发帖或评论，'+myName+'不能出现在点赞里\n';
-sys+='7. 如需表情用真实emoji\n\n';
+sys+='5. 大部分帖子和'+myName+'无关，写论坛里各种人的日常/话题/讨论。只有约三分之一的帖子可以和'+myName+'有关（比如熟人隐晦提到、或话题涉及）\n';
+sys+='6. 每条帖子配 2-6 条评论、一些点赞，评论者以陌生网友为主，评论符合各自性格\n';
+sys+='7. 绝对不能以'+myName+'的身份发帖或评论，'+myName+'不能出现在点赞里\n';
+sys+='8. 如需表情用真实emoji\n\n';
   sys+='严格按以下格式，每条帖子用===分隔：\n===\n帖子|||网名|||帖子内容\n赞|||名字1,名字2\n评|||名字|||内容\n回|||名字|||回复给谁|||内容\n===\n帖子|||网名|||内容\n赞|||名字1\n评|||名字|||内容\n\n只输出格式，不要解释。';
   try{
     const reply=await callApi([{role:'system',content:sys},{role:'user',content:'生成6-8条帖子（含评论）'}]);
