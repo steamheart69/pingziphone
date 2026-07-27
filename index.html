@@ -1420,64 +1420,15 @@ async function dyGenVideoImg(v,vi,vd){
   }catch(e){console.error(e);alert('生图失败：'+(e.message||''));buildFeed()}
 }
 
-  // ===== 评论面板 =====
-  var dyCommentSheet=null;
-  function ensureCommentSheet(){
-    if(dyCommentSheet)return;
-    dyCommentSheet=document.createElement('div');
-    dyCommentSheet.id='dyCommentSheet';
-    dyCommentSheet.style.cssText='position:absolute;inset:0;z-index:50;display:none';
-    dyCommentSheet.innerHTML='<div class="dy-cmt-mask" style="position:absolute;inset:0;background:rgba(0,0,0,.35)"></div>'
-      +'<div class="dy-cmt-panel" style="position:absolute;left:0;right:0;bottom:0;height:66%;background:#fff;border-radius:16px 16px 0 0;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .3s">'
-      +'<div style="padding:14px;text-align:center;font-size:14px;font-weight:600;border-bottom:1px solid #f0f0f0;position:relative;color:#222"><span id="dyCmtTitle">评论</span><span id="dyCmtGen" style="position:absolute;left:14px;top:12px;font-size:13px;color:#fe2c55;cursor:pointer">🔄 识图评论</span><span id="dyCmtClose" style="position:absolute;right:16px;top:11px;font-size:22px;color:#999;cursor:pointer;line-height:1">×</span></div>'
-      +'<div id="dyCmtList" style="flex:1;overflow-y:auto;padding:6px 0;-webkit-overflow-scrolling:touch"></div></div>';
-    document.getElementById('douyinApp').appendChild(dyCommentSheet);
-    dyCommentSheet.querySelector('.dy-cmt-mask').onclick=closeCommentSheet;
-    dyCommentSheet.querySelector('#dyCmtClose').onclick=closeCommentSheet;
-  }
-  function closeCommentSheet(){
-    if(!dyCommentSheet)return;
-    dyCommentSheet.querySelector('.dy-cmt-panel').style.transform='translateY(100%)';
-    setTimeout(function(){dyCommentSheet.style.display='none'},280);
-  }
-  var dyCmtCurV=null;
-  function openCommentSheet(v){
-    ensureCommentSheet();
-    dyCmtCurV=v;
-    var cmts=v.comments||[];
-    document.getElementById('dyCmtTitle').textContent=cmts.length?(cmts.length+'条评论'):'评论';
-    var list=dyCommentSheet.querySelector('#dyCmtList');
-    list.innerHTML='';
-    if(!cmts.length){
-      list.innerHTML='<div style="padding:50px 30px;text-align:center;color:#999;font-size:14px;line-height:1.8">还没有评论<br>点上方「识图评论」<br>让网友看图开聊</div>';
-    }else{
-      cmts.forEach(function(c){
-        var el=document.createElement('div');
-        el.style.cssText='display:flex;gap:10px;padding:11px 16px';
-        el.innerHTML='<div style="width:38px;height:38px;border-radius:50%;overflow:hidden;flex-shrink:0">'+forumStrangerAv(c.name||'?')+'</div>'
-          +'<div style="flex:1;min-width:0"><div style="font-size:13px;color:#999;margin-bottom:3px">'+escapeHtml(c.name||'网友')+'</div>'
-          +'<div style="font-size:15px;color:#222;line-height:1.45;word-break:break-word">'+escapeHtml(c.text||'')+'</div>'
-          +(c.likes?'<div style="font-size:12px;color:#bbb;margin-top:5px">♥ '+escapeHtml(c.likes)+'</div>':'')+'</div>';
-        list.appendChild(el);
-      });
-    }
-    list.scrollTop=0;
-    var genBtn=document.getElementById('dyCmtGen');
-    genBtn.textContent=v.image?'🔄 识图评论':'🔄 生成评论';
-    genBtn.onclick=async function(){
-      var api=getApiSettings();
-      if(!api.apiUrl||!api.apiKey||!api.model)return alert('先在设置里配置API');
-      var orig=genBtn.textContent;genBtn.textContent='生成中…';genBtn.style.pointerEvents='none';
-      try{
-        var ok=await dyGenComments(dyCmtCurV);
-        if(ok){dyPersistVideo(dyCmtCurV);openCommentSheet(dyCmtCurV)}
-        else alert('生成失败');
-      }catch(e){console.error(e);alert('生成失败：'+(e.message||''))}
-      finally{genBtn.textContent=orig;genBtn.style.pointerEvents='auto'}
-    };
-    dyCommentSheet.style.display='block';
-    setTimeout(function(){dyCommentSheet.querySelector('.dy-cmt-panel').style.transform='translateY(0)'},10);
-  }
+  
+  // ===== 评论面板（统一线程化评论，见页面底部 window.dyComment）=====
+function openCommentSheet(v){
+  if(!v.comments)v.comments=[];
+  window.dyComment.open(v,{
+    save:function(){dyPersistVideo(v)},
+    genTop:function(){return dyGenComments(v)}
+  });
+}
 
 // ===== 转发给角色（单聊/群聊）=====
    function dyForward(v){
@@ -1506,7 +1457,16 @@ async function dyGenComments(v){
   sys+='作者：'+(v.author||'')+'\n';
   if(scene)sys+='视频画面描述："'+scene+'"\n';
   if(v.desc)sys+='作品文案："'+v.desc+'"\n';
-  if(v.image)sys+='这条作品配了一张图片（见下方），请务必仔细观察图片里真实呈现的画面、人物、场景、动作、细节，评论要紧扣图片里看到的内容，而不是凭空发挥。\n';
+    if(v.image)sys+='这条作品配了一张图片（见下方），请务必仔细观察图片里真实呈现的画面、人物、场景、动作、细节，评论要紧扣图片里看到的内容，而不是凭空发挥。\n';
+  if(v.isMe){
+    var _fs=getPublicFriends();
+    var _contacts=(window.dyGetContacts?window.dyGetContacts():[]);
+    var _followers=_contacts.map(function(id){return _fs.find(function(x){return x.id===id})}).filter(Boolean);
+    if(_followers.length){
+      sys+='\n[这条是"我"自己发的作品。以下是关注我的好友，请务必让其中2-4人也来评论，用他们的真名，评论要符合各自的人设和性格]\n';
+      _followers.forEach(function(f){sys+='- '+f.name+(f.persona?'：'+f.persona.slice(0,60):'')+'\n'});
+    }
+  }
   sys+='\n要求：\n';
   sys+='1. 点赞/评论/收藏/转发数据要合理（素人几百到几千，偶有爆款上万）\n';
   sys+='2. 生成10-14条网友评论，紧扣'+(v.image?'图片画面、':'')+(scene?'视频内容、':'')+'文案，口语化、有梗、真实，有夸有玩梗有抬杠有走心，昵称有网感\n';
@@ -2192,37 +2152,13 @@ var avHtml=(authorF&&authorF.avatar)?'<img src="'+getAvUrl(authorF.avatar)+'">':
     });
   }
 
-  var fvSheet=null,fvCurV=null,fvCurArr=null;
-  function ensureFvSheet(){
-    if(fvSheet)return;
-    fvSheet=document.createElement('div');fvSheet.id='dyFvCmtSheet';
-    fvSheet.style.cssText='position:absolute;inset:0;z-index:50;display:none';
-    fvSheet.innerHTML='<div class="fv-mask" style="position:absolute;inset:0;background:rgba(0,0,0,.35)"></div><div class="fv-panel" style="position:absolute;left:0;right:0;bottom:0;height:66%;background:#fff;border-radius:16px 16px 0 0;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .3s"><div style="padding:14px;text-align:center;font-size:14px;font-weight:600;border-bottom:1px solid #f0f0f0;position:relative;color:#222"><span id="fvCmtTitle">评论</span><span id="fvCmtGen" style="position:absolute;left:14px;top:12px;font-size:13px;color:#fe2c55;cursor:pointer">🔄 生成评论</span><span id="fvCmtClose" style="position:absolute;right:16px;top:11px;font-size:22px;color:#999;cursor:pointer;line-height:1">×</span></div><div id="fvCmtList" style="flex:1;overflow-y:auto;padding:6px 0;-webkit-overflow-scrolling:touch"></div></div>';
-    document.getElementById('douyinApp').appendChild(fvSheet);
-    fvSheet.querySelector('.fv-mask').onclick=closeFvSheet;
-    fvSheet.querySelector('#fvCmtClose').onclick=closeFvSheet;
-  }
-  function closeFvSheet(){if(!fvSheet)return;fvSheet.querySelector('.fv-panel').style.transform='translateY(100%)';setTimeout(function(){fvSheet.style.display='none'},280)}
-  function openFvComment(v,arr){
-    ensureFvSheet();fvCurV=v;fvCurArr=arr;
-    var cmts=v.comments||[];
-    document.getElementById('fvCmtTitle').textContent=cmts.length?(cmts.length+'条评论'):'评论';
-    var list=fvSheet.querySelector('#fvCmtList');list.innerHTML='';
-    if(!cmts.length){list.innerHTML='<div style="padding:50px 30px;text-align:center;color:#999;font-size:14px;line-height:1.8">还没有评论<br>点上方生成评论</div>'}
-    else cmts.forEach(function(c){var el=document.createElement('div');el.style.cssText='display:flex;gap:10px;padding:11px 16px';el.innerHTML='<div style="width:38px;height:38px;border-radius:50%;overflow:hidden;flex-shrink:0">'+forumStrangerAv(c.name||'?')+'</div><div style="flex:1;min-width:0"><div style="font-size:13px;color:#999;margin-bottom:3px">'+escapeHtml(c.name||'网友')+'</div><div style="font-size:15px;color:#222;line-height:1.45;word-break:break-word">'+escapeHtml(c.text||'')+'</div>'+(c.likes?'<div style="font-size:12px;color:#bbb;margin-top:5px">♥ '+escapeHtml(c.likes)+'</div>':'')+'</div>';list.appendChild(el)});
-    list.scrollTop=0;
-    var genBtn=document.getElementById('fvCmtGen');
-    genBtn.textContent=v.image?'🔄 识图评论':'🔄 生成评论';
-    genBtn.onclick=async function(){
-      var api=getApiSettings();if(!api.apiUrl||!api.apiKey||!api.model)return alert('先在设置里配置API');
-      var orig=genBtn.textContent;genBtn.textContent='生成中…';genBtn.style.pointerEvents='none';
-      try{var ok=await fvGenComments(fvCurV);if(ok){saveFV(fvCurArr);buildFriendsFeed();openFvComment(fvCurV,fvCurArr)}else alert('生成失败')}
-      catch(e){console.error(e);alert('生成失败：'+(e.message||''))}
-      finally{genBtn.textContent=orig;genBtn.style.pointerEvents='auto'}
-    };
-    fvSheet.style.display='block';
-    setTimeout(function(){fvSheet.querySelector('.fv-panel').style.transform='translateY(0)'},10);
-  }
+    function openFvComment(v,arr){
+    if(!v.comments)v.comments=[];
+    window.dyComment.open(v,{
+      save:function(){saveFV(arr);buildFriendsFeed()},
+      genTop:function(){return fvGenComments(v)}
+    });
+    }
   async function fvGenComments(v){
     var api=getApiSettings();if(!api.apiUrl||!api.apiKey||!api.model)return false;
     var gp=getGlobalPromptText(),sys='';
@@ -2329,4 +2265,196 @@ var avHtml=(authorF&&authorF.avatar)?'<img src="'+getAvUrl(authorF.avatar)+'">':
   if(mfStat){mfStat.style.cursor='pointer';mfStat.addEventListener('click',function(e){e.stopPropagation();showMutualFollow()})}
 })();
 </script>
-</body></html>
+<script>
+/* ===== 抖音·统一线程化评论系统（首页/朋友/我的作品通用）===== */
+window.dyComment=(function(){
+  var sheet=null,curV=null,curCfg=null;
+
+  function myName(){var d=LS.get('dyMeData_'+pid(),'{}');var pe=getActivePersona();return d.name||(pe?pe.name:'我')}
+  function myAvatarHtml(){var d=LS.get('dyMeData_'+pid(),'{}');var pe=getActivePersona();var av=d.avatar||(pe&&pe.avatar);return av?'<img src="'+getAvUrl(av)+'" style="width:100%;height:100%;object-fit:cover">':forumStrangerAv(myName())}
+  function avatarHtml(c){   if(c.isMe)return myAvatarHtml();   try{var fr=getPublicFriends().find(function(f){return f.name===c.name});if(fr&&fr.avatar)return '<img src="'+getAvUrl(fr.avatar)+'" style="width:100%;height:100%;object-fit:cover">'}catch(e){}   return forumStrangerAv(c.name||'?'); } function getDyFriends(){var fs=getPublicFriends();var ids=(window.dyGetContacts?window.dyGetContacts():[]);return ids.map(function(id){return fs.find(function(x){return x.id===id})}).filter(Boolean)} function detectMention(txt){var fr=getDyFriends();for(var i=0;i<fr.length;i++){if((txt||'').indexOf('@'+fr[i].name)>=0)return fr[i].name}return ''}
+
+  function ensure(){
+    if(sheet)return;
+    sheet=document.createElement('div');
+    sheet.id='dyUniCmtSheet';
+    sheet.style.cssText='position:absolute;inset:0;z-index:60;display:none';
+    sheet.innerHTML='<div class="duc-mask" style="position:absolute;inset:0;background:rgba(0,0,0,.35)"></div>'
+      +'<div class="duc-panel" style="position:absolute;left:0;right:0;bottom:0;height:70%;background:#fff;border-radius:16px 16px 0 0;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .3s">'
+      +'<div style="padding:14px;text-align:center;font-size:14px;font-weight:600;border-bottom:1px solid #f0f0f0;position:relative;color:#222"><span id="ducTitle">评论</span><span id="ducGen" style="position:absolute;left:14px;top:12px;font-size:13px;color:#fe2c55;cursor:pointer">🔄 生成评论</span><span id="ducClose" style="position:absolute;right:16px;top:11px;font-size:22px;color:#999;cursor:pointer;line-height:1">×</span></div>'
+          +'<div id="ducList" style="flex:1;overflow-y:auto;padding:6px 0 4px;-webkit-overflow-scrolling:touch"></div>'
+    +'<div style="padding:6px 14px 2px;font-size:11px;color:#bbb;text-align:center">单击评论可回复 · 双击可删除</div>'
+    +'<div style="display:flex;align-items:flex-end;gap:8px;padding:8px 12px calc(8px + env(safe-area-inset-bottom));border-top:1px solid #f0f0f0"><textarea id="ducInput" rows="1" placeholder="说点什么..." style="flex:1;padding:9px 12px;border:none;border-radius:18px;background:#f4f4f6;font-size:15px;outline:none;resize:none;max-height:90px;line-height:1.4;font-family:inherit"></textarea><button id="ducSend" style="padding:9px 16px;background:#fe2c55;color:#fff;border:none;border-radius:18px;font-size:14px;font-weight:600;cursor:pointer;flex-shrink:0">发送</button></div></div>';
+  document.getElementById('douyinApp').appendChild(sheet);
+  sheet.querySelector('.duc-mask').onclick=close;
+  sheet.querySelector('#ducClose').onclick=close;
+  var _inp=sheet.querySelector('#ducInput');
+  _inp.oninput=function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,90)+'px'};
+  _inp.onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();postTop()}};
+  sheet.querySelector('#ducSend').onclick=postTop;
+  }
+  function show(){sheet.style.display='block';setTimeout(function(){sheet.querySelector('.duc-panel').style.transform='translateY(0)'},10)}
+  function close(){if(!sheet)return;sheet.querySelector('.duc-panel').style.transform='translateY(100%)';setTimeout(function(){sheet.style.display='none'},280)}
+
+  function totalCount(){var n=0;(curV.comments||[]).forEach(function(c){n++;(c.replies||[]).forEach(function(){n++})});return n}
+
+  function bindTap(el,onSingle,onDouble){
+    var lastTap=0,timer=null;
+    el.addEventListener('click',function(e){
+      e.stopPropagation();
+      var now=Date.now();
+      if(now-lastTap<350){clearTimeout(timer);timer=null;lastTap=0;onDouble()}
+      else{lastTap=now;timer=setTimeout(function(){timer=null;lastTap=0;onSingle()},350)}
+    });
+  }
+
+  function render(){
+    ensure();
+    var cmts=curV.comments||[];
+    document.getElementById('ducTitle').textContent=totalCount()?(totalCount()+'条评论'):'评论';
+    var list=sheet.querySelector('#ducList');
+    list.innerHTML='';
+    if(!cmts.length){
+      list.innerHTML='<div style="padding:50px 30px;text-align:center;color:#999;font-size:14px;line-height:1.8">还没有评论<br>点上方生成，或直接开聊</div>';
+    }else{
+      cmts.forEach(function(c){
+        if(!c.id)c.id='c'+Math.random().toString(36).slice(2,8);
+        if(!c.replies)c.replies=[];
+        var top=document.createElement('div');
+        top.style.cssText='display:flex;gap:10px;padding:11px 16px';
+        top.innerHTML='<div style="width:38px;height:38px;border-radius:50%;overflow:hidden;flex-shrink:0">'+avatarHtml(c)+'</div>'
+          +'<div style="flex:1;min-width:0"><div style="font-size:13px;color:#999;margin-bottom:3px">'+escapeHtml(c.name||'网友')+(c.isMe?' <span style="color:#fe2c55">· 我</span>':'')+'</div>'
+          +'<div class="duc-body" style="font-size:15px;color:#222;line-height:1.45;word-break:break-word">'+escapeHtml(c.text||'')+'</div>'
+          +(c.likes?'<div style="font-size:12px;color:#bbb;margin-top:5px">♥ '+escapeHtml(c.likes)+'</div>':'')
+          +'<div class="duc-replies"></div></div>';
+        bindTap(top.querySelector('.duc-body'),function(){reply(c,c)},function(){del(c,null)});
+        var rc=top.querySelector('.duc-replies');
+        (c.replies||[]).forEach(function(r){
+          if(!r.id)r.id='r'+Math.random().toString(36).slice(2,8);
+          var rel=document.createElement('div');
+          rel.style.cssText='display:flex;gap:8px;padding:8px 0 0';
+          var showReplyTo=r.replyTo&&r.replyTo!==c.name;
+          rel.innerHTML='<div style="width:26px;height:26px;border-radius:50%;overflow:hidden;flex-shrink:0">'+avatarHtml(r)+'</div>'
+            +'<div style="flex:1;min-width:0"><div style="font-size:12px;color:#999;margin-bottom:2px">'+escapeHtml(r.name||'网友')+(r.isMe?' <span style="color:#fe2c55">· 我</span>':'')+(showReplyTo?' <span style="color:#8a8b91">回复</span> <span style="color:#576b95">'+escapeHtml(r.replyTo)+'</span>':'')+'</div>'
+            +'<div class="duc-rbody" style="font-size:14px;color:#222;line-height:1.4;word-break:break-word">'+escapeHtml(r.text||'')+'</div></div>';
+          bindTap(rel.querySelector('.duc-rbody'),function(){reply(c,r)},function(){del(c,r)});
+          rc.appendChild(rel);
+        });
+        list.appendChild(top);
+      });
+    }
+  }
+
+  function reply(topComment,target){
+  var frs=getDyFriends();
+  var hint=frs.length?'（可 @'+frs.map(function(f){return f.name}).join('/')+' 让TA回你）':'';
+  uiPrompt({title:'回复 '+(target.name||'网友'),hint:hint,placeholder:'说点什么...',okText:'发送'},function(txt){
+    if(!txt||!txt.trim())return;
+    if(!topComment.replies)topComment.replies=[];
+    topComment.replies.push({id:'r'+Date.now(),name:myName(),text:txt.trim(),replyTo:target.name||'',isMe:true});
+    curV.commentCount=String(totalCount());
+    if(curCfg&&curCfg.save)curCfg.save();
+    render();
+    genReplies(topComment,detectMention(txt.trim()));
+  });
+  }
+
+function postTop(){
+  var inp=sheet.querySelector('#ducInput');
+  var txt=inp.value.trim();
+  if(!txt)return;
+  if(!curV.comments)curV.comments=[];
+  var myC={id:'c'+Date.now(),name:myName(),text:txt,isMe:true,replies:[]};
+  curV.comments.unshift(myC);
+  curV.commentCount=String(totalCount());
+  if(curCfg&&curCfg.save)curCfg.save();
+    inp.value='';inp.style.height='auto';
+  render();
+  genReplies(myC,detectMention(txt));
+}
+
+function del(topComment,replyObj){
+    uiConfirm('确定删除这条评论吗？',function(){
+      if(replyObj){topComment.replies=(topComment.replies||[]).filter(function(x){return x!==replyObj})}
+      else{curV.comments=(curV.comments||[]).filter(function(x){return x!==topComment})}
+      curV.commentCount=String(totalCount());
+      if(curCfg&&curCfg.save)curCfg.save();
+      render();
+    },{title:'删除评论',danger:true,okText:'删除'});
+  }
+
+  async function genReplies(topComment,mentioned){
+  var api=getApiSettings();
+  if(!api.apiUrl||!api.apiKey||!api.model)return;
+  var loadEl=document.createElement('div');
+  loadEl.style.cssText='padding:12px;text-align:center;color:#bbb;font-size:13px';
+  loadEl.textContent='网友们正在回复…';
+  sheet.querySelector('#ducList').appendChild(loadEl);
+  try{
+    var gp=getGlobalPromptText(),sys='';
+    if(gp)sys+='[全局设定]\n'+gp+'\n\n';
+    var scene=(curV.text||'').replace(/〔画面〕/g,'').replace(/[\r\n]+/g,'，').replace(/^[，,、\s]+|[，,、\s]+$/g,'').trim();
+    var mine=myName();
+    var authorF=curV.authorId?getFriends().find(function(x){return x.id===curV.authorId}):null;
+    var friends=getDyFriends();
+    sys+='你是抖音评论区楼中楼回复生成器。\n';
+    sys+='视频作者：'+(curV.author||'')+(curV.isMe?'（就是"我"'+mine+'本人发的）':'')+'\n';
+    if(scene)sys+='视频画面："'+scene+'"\n';
+    if(curV.desc)sys+='视频文案："'+curV.desc+'"\n';
+    if(authorF&&authorF.persona)sys+='视频作者（'+authorF.name+'）的人设：'+authorF.persona.slice(0,200)+'\n';
+    if(friends.length){
+      sys+='\n[可以出场的熟人角色（"我"添加过的朋友，只有下面这些人能作为熟人回复，其他任何角色、NPC都绝对不能出现）]\n';
+      friends.forEach(function(f){sys+='- '+f.name+(f.persona?'：'+f.persona.slice(0,60):'')+'\n'});
+    }
+    sys+='\n下面是某条评论的楼中楼对话，从上到下按时间顺序：\n';
+    sys+='【'+(topComment.name||'网友')+'】'+(topComment.text||'')+'\n';
+    (topComment.replies||[]).forEach(function(r){sys+='【'+(r.name||'网友')+(r.replyTo?' 回复 '+r.replyTo:'')+'】'+(r.text||'')+'\n'});
+    sys+='\n"我"（'+mine+'）刚在这个楼里发了最新一条内容。请生成 5-6 条新的楼中楼回复，规则：\n';
+    sys+='1. 紧扣这一楼的对话和"我"最新说的话，你来我往、自然真实、口语化有梗\n';
+    sys+='2. 回复者可以是：原评论者本人、路过的陌生网友';
+    if(authorF)sys+='、视频作者「'+authorF.name+'」本人（用TA的人设口吻）';
+    if(friends.length)sys+='、以及上面列出的熟人角色（随机挑其中 1-3 个来回复即可，不用每个都回，用TA本人的名字和口吻）';
+    sys+='\n3. 【严格限制】除了上面列出的熟人角色，绝对不能让任何其他角色、NPC冒充熟人来评论；陌生网友必须是新编的路人昵称\n';
+    if(mentioned)sys+='4. 【重要】"我"在评论里 @ 了「'+mentioned+'」，所以「'+mentioned+'」这次必须出现并直接回复"我"，用TA本人的人设口吻\n';
+    sys+=(mentioned?'5':'4')+'. 每条都要指明回复给谁（这一楼里出现过的人）\n';
+    sys+=(mentioned?'6':'5')+'. 绝对不能冒充"我"（'+mine+'）发言\n';
+    sys+=(mentioned?'7':'6')+'. 陌生网友昵称要有网感、各式各样；内容干净积极\n\n';
+    sys+='严格按格式，每行一条：\n回|||回复者昵称|||回复给谁|||回复内容\n\n只输出格式，不要解释。';
+    var rep=await callApi([{role:'system',content:sys},{role:'user',content:'生成5-6条楼中楼回复'}]);
+    rep.split('\n').forEach(function(line){
+      var p=line.split('|||').map(function(s){return s.trim()});
+      if(p[0]==='回'&&p[1]&&p[3]&&p[1]!==mine){
+        topComment.replies.push({id:'r'+Date.now()+Math.random().toString(36).slice(2,5),name:p[1],text:p[3],replyTo:p[2]||''});
+      }
+    });
+    curV.commentCount=String(totalCount());
+    if(curCfg&&curCfg.save)curCfg.save();
+    render();
+  }catch(e){console.error(e);if(loadEl.parentNode)loadEl.remove()}
+  }
+
+  function open(v,cfg){
+    curV=v;curCfg=cfg||{};
+    if(!v.comments)v.comments=[];
+    ensure();
+    var genBtn=document.getElementById('ducGen');
+    genBtn.textContent=v.image?'🔄 识图评论':'🔄 生成评论';
+    genBtn.onclick=async function(){
+      var api=getApiSettings();
+      if(!api.apiUrl||!api.apiKey||!api.model)return alert('先在设置里配置API');
+      if(!curCfg.genTop)return;
+      var orig=genBtn.textContent;genBtn.textContent='生成中…';genBtn.style.pointerEvents='none';
+      try{
+        var ok=await curCfg.genTop();
+        if(ok){if(curCfg.save)curCfg.save();render()}
+        else alert('生成失败');
+      }catch(e){console.error(e);alert('生成失败：'+(e.message||''))}
+      finally{genBtn.textContent=orig;genBtn.style.pointerEvents='auto'}
+    };
+    render();
+    show();
+  }
+
+  return {open:open};
+})();
+</script></body></html>
