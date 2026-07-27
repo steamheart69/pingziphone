@@ -1,4 +1,4 @@
-const CACHE = 'bottle-v2'; // 每次发新版就改这个版本号
+const CACHE = 'bottle-v3'; // 每次发新版就改这个版本号（改了才会触发更新）
 
 self.addEventListener('install', e => {
   self.skipWaiting(); // 新 SW 装好立刻待命，不等旧标签页关闭
@@ -14,10 +14,10 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const req = e.request;
-  // HTML 文档：网络优先，拿不到再用缓存兜底（离线可用）
+  // HTML 文档：网络优先，且绕过浏览器 HTTP 缓存，永远拿服务器最新版
   if (req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html')) {
     e.respondWith(
-      fetch(req).then(res => {
+      fetch(req, { cache: 'no-store' }).then(res => {
         const copy = res.clone();
         caches.open(CACHE).then(c => c.put(req, copy));
         return res;
