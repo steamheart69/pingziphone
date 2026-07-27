@@ -1470,6 +1470,7 @@ async function dyGenComments(v){
   sys+='\n要求：\n';
   sys+='1. 点赞/评论/收藏/转发数据要合理（素人几百到几千，偶有爆款上万）\n';
   sys+='2. 生成10-14条网友评论，紧扣'+(v.image?'图片画面、':'')+(scene?'视频内容、':'')+'文案，口语化、有梗、真实，有夸有玩梗有抬杠有走心，昵称有网感\n';
+sys+='2.5 大部分评论自然穿插真实emoji表情（如😂🔥🥺💯👍😭），符合抖音评论区风格，别硬凑也别每条都堆一堆\n';
   sys+='3. 部分评论带点赞数（如1.2w、356），大部分留空\n';
   sys+='4. 内容干净积极\n\n';
   sys+='严格按以下格式：\n数据|||点赞数|||评论数|||收藏数|||转发数\n评论|||网友昵称|||评论内容|||点赞数\n评论|||网友昵称|||评论内容|||点赞数\n\n只输出格式，不要解释。';
@@ -2168,7 +2169,7 @@ var avHtml=(authorF&&authorF.avatar)?'<img src="'+getAvUrl(authorF.avatar)+'">':
     if(scene)sys+='视频画面描述："'+scene+'"\n';
     if(v.desc)sys+='视频文案："'+v.desc+'"\n';
     if(v.image)sys+='这条作品配了图片（见下方），请仔细观察图片内容，评论要紧扣图片里看到的画面。\n';
-    sys+='\n要求：\n1. 生成10-14条网友评论，紧扣内容，口语化有梗真实\n2. 部分评论带点赞数（如1.2w、356），大部分留空\n3. 内容干净积极\n\n格式：\n评论|||网友昵称|||评论内容|||点赞数\n\n只输出格式，不要解释。';
+    sys+='\n要求：\n1. 生成10-14条网友评论，紧扣内容，口语化有梗真实，大部分评论自然穿插真实emoji表情（如😂🔥🥺💯👍😭），符合抖音评论区风格，别硬凑\n2. 部分评论带点赞数（如1.2w、356），大部分留空\n3. 内容干净积极\n\n格式：\n评论|||网友昵称|||评论内容|||点赞数\n\n只输出格式，不要解释。';
     var userMsg=v.image?{role:'user',content:[{type:'image_url',image_url:{url:v.image}},{type:'text',text:'看图并结合文案生成评论'}]}:{role:'user',content:'生成这条视频的评论'};
     var reply=await callApi([{role:'system',content:sys},userMsg]);
     var cmts=[];
@@ -2274,25 +2275,46 @@ window.dyComment=(function(){
   function myAvatarHtml(){var d=LS.get('dyMeData_'+pid(),'{}');var pe=getActivePersona();var av=d.avatar||(pe&&pe.avatar);return av?'<img src="'+getAvUrl(av)+'" style="width:100%;height:100%;object-fit:cover">':forumStrangerAv(myName())}
   function avatarHtml(c){   if(c.isMe)return myAvatarHtml();   try{var fr=getPublicFriends().find(function(f){return f.name===c.name});if(fr&&fr.avatar)return '<img src="'+getAvUrl(fr.avatar)+'" style="width:100%;height:100%;object-fit:cover">'}catch(e){}   return forumStrangerAv(c.name||'?'); } function getDyFriends(){var fs=getPublicFriends();var ids=(window.dyGetContacts?window.dyGetContacts():[]);return ids.map(function(id){return fs.find(function(x){return x.id===id})}).filter(Boolean)} function detectMention(txt){var fr=getDyFriends();for(var i=0;i<fr.length;i++){if((txt||'').indexOf('@'+fr[i].name)>=0)return fr[i].name}return ''}
 
-  function ensure(){
-    if(sheet)return;
-    sheet=document.createElement('div');
-    sheet.id='dyUniCmtSheet';
-    sheet.style.cssText='position:absolute;inset:0;z-index:60;display:none';
-    sheet.innerHTML='<div class="duc-mask" style="position:absolute;inset:0;background:rgba(0,0,0,.35)"></div>'
-      +'<div class="duc-panel" style="position:absolute;left:0;right:0;bottom:0;height:70%;background:#fff;border-radius:16px 16px 0 0;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .3s">'
-      +'<div style="padding:14px;text-align:center;font-size:14px;font-weight:600;border-bottom:1px solid #f0f0f0;position:relative;color:#222"><span id="ducTitle">评论</span><span id="ducGen" style="position:absolute;left:14px;top:12px;font-size:13px;color:#fe2c55;cursor:pointer">🔄 生成评论</span><span id="ducClose" style="position:absolute;right:16px;top:11px;font-size:22px;color:#999;cursor:pointer;line-height:1">×</span></div>'
-          +'<div id="ducList" style="flex:1;overflow-y:auto;padding:6px 0 4px;-webkit-overflow-scrolling:touch"></div>'
-    +'<div style="padding:6px 14px 2px;font-size:11px;color:#bbb;text-align:center">单击评论可回复 · 双击可删除</div>'
-    +'<div style="display:flex;align-items:flex-end;gap:8px;padding:8px 12px calc(8px + env(safe-area-inset-bottom));border-top:1px solid #f0f0f0"><textarea id="ducInput" rows="1" placeholder="说点什么..." style="flex:1;padding:9px 12px;border:none;border-radius:18px;background:#f4f4f6;font-size:15px;outline:none;resize:none;max-height:90px;line-height:1.4;font-family:inherit"></textarea><button id="ducSend" style="padding:9px 16px;background:#fe2c55;color:#fff;border:none;border-radius:18px;font-size:14px;font-weight:600;cursor:pointer;flex-shrink:0">发送</button></div></div>';
-  document.getElementById('douyinApp').appendChild(sheet);
-  sheet.querySelector('.duc-mask').onclick=close;
-  sheet.querySelector('#ducClose').onclick=close;
-  var _inp=sheet.querySelector('#ducInput');
-  _inp.oninput=function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,90)+'px'};
-  _inp.onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();postTop()}};
-  sheet.querySelector('#ducSend').onclick=postTop;
-  }
+function ensure(){
+  if(sheet)return;
+  sheet=document.createElement('div');
+  sheet.id='dyUniCmtSheet';
+  sheet.style.cssText='position:absolute;inset:0;z-index:60;display:none';
+  var EMOJIS=['😂','🤣','😅','😊','😍','🥰','😘','😜','🤪','😎','🥳','😏','😒','🙄','😳','🥺','😭','😱','😤','😡','🤔','🤨','😴','🥴','😷','🤩','😉','😌','😔','😩','🤯','😇','🤤','🙃','😬','🤭','👀','💀','😈','👻','🎉','✨','🔥','💯','❤️','🧡','💛','💚','💙','💜','🖤','🤍','💔','💕','💖','👍','👎','👏','🙏','🙌','💪','🤝','👌','✌️','🐶','🐱','🌈','☀️','🌙','⭐','🍚','🍜','🍔','🍰','🍺','☕','🎵','🎸','📷','💰'];
+  sheet.innerHTML='<div class="duc-mask" style="position:absolute;inset:0;background:rgba(0,0,0,.35)"></div>'
+    +'<div class="duc-panel" style="position:absolute;left:0;right:0;bottom:0;height:70%;background:#fff;border-radius:16px 16px 0 0;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .3s">'
+    +'<div style="padding:14px;text-align:center;font-size:14px;font-weight:600;border-bottom:1px solid #f0f0f0;position:relative;color:#222"><span id="ducTitle">评论</span><span id="ducGen" style="position:absolute;left:14px;top:12px;font-size:13px;color:#fe2c55;cursor:pointer">🔄 生成评论</span><span id="ducClose" style="position:absolute;right:16px;top:11px;font-size:22px;color:#999;cursor:pointer;line-height:1">×</span></div>'
+        +'<div id="ducList" style="flex:1;overflow-y:auto;padding:6px 0 4px;-webkit-overflow-scrolling:touch"></div>'
+  +'<div style="padding:6px 14px 2px;font-size:11px;color:#bbb;text-align:center">单击评论可回复 · 双击可删除</div>'
+  +'<div id="ducEmojiPanel" style="display:none;flex-wrap:wrap;padding:6px 8px calc(6px + env(safe-area-inset-bottom));max-height:150px;overflow-y:auto;border-top:1px solid #f0f0f0;-webkit-overflow-scrolling:touch">'+EMOJIS.map(function(e){return '<span class="duc-emoji" style="width:12.5%;text-align:center;font-size:24px;cursor:pointer;padding:5px 0">'+e+'</span>'}).join('')+'</div>'
+  +'<div style="display:flex;align-items:flex-end;gap:8px;padding:8px 12px calc(8px + env(safe-area-inset-bottom));border-top:1px solid #f0f0f0"><span id="ducEmojiBtn" style="font-size:24px;cursor:pointer;flex-shrink:0;padding-bottom:5px;line-height:1">😊</span><textarea id="ducInput" rows="1" placeholder="说点什么..." style="flex:1;padding:9px 12px;border:none;border-radius:18px;background:#f4f4f6;font-size:15px;outline:none;resize:none;max-height:90px;line-height:1.4;font-family:inherit"></textarea><button id="ducSend" style="padding:9px 16px;background:#fe2c55;color:#fff;border:none;border-radius:18px;font-size:14px;font-weight:600;cursor:pointer;flex-shrink:0">发送</button></div></div>';
+document.getElementById('douyinApp').appendChild(sheet);
+sheet.querySelector('.duc-mask').onclick=close;
+sheet.querySelector('#ducClose').onclick=close;
+var _inp=sheet.querySelector('#ducInput');
+_inp.oninput=function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,90)+'px'};
+_inp.onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();postTop()}};
+sheet.querySelector('#ducSend').onclick=postTop;
+var _panel=sheet.querySelector('#ducEmojiPanel');
+sheet.querySelector('#ducEmojiBtn').onclick=function(){
+  if(_panel.style.display==='none'){_panel.style.display='flex';_inp.blur()}
+  else{_panel.style.display='none'}
+};
+_inp.addEventListener('focus',function(){_panel.style.display='none'});
+_panel.querySelectorAll('.duc-emoji').forEach(function(sp){
+  sp.onclick=function(){
+    var start=_inp.selectionStart,end=_inp.selectionEnd,val=_inp.value;
+    if(typeof start==='number'){
+      _inp.value=val.slice(0,start)+sp.textContent+val.slice(end);
+      var pos=start+sp.textContent.length;
+      try{_inp.selectionStart=_inp.selectionEnd=pos}catch(e){}
+    }else{
+      _inp.value=val+sp.textContent;
+    }
+        _inp.style.height='auto';_inp.style.height=Math.min(_inp.scrollHeight,90)+'px';
+  };
+});
+}  
   function show(){sheet.style.display='block';setTimeout(function(){sheet.querySelector('.duc-panel').style.transform='translateY(0)'},10)}
   function close(){if(!sheet)return;sheet.querySelector('.duc-panel').style.transform='translateY(100%)';setTimeout(function(){sheet.style.display='none'},280)}
 
@@ -2418,7 +2440,7 @@ function del(topComment,replyObj){
     if(mentioned)sys+='4. 【重要】"我"在评论里 @ 了「'+mentioned+'」，所以「'+mentioned+'」这次必须出现并直接回复"我"，用TA本人的人设口吻\n';
     sys+=(mentioned?'5':'4')+'. 每条都要指明回复给谁（这一楼里出现过的人）\n';
     sys+=(mentioned?'6':'5')+'. 绝对不能冒充"我"（'+mine+'）发言\n';
-    sys+=(mentioned?'7':'6')+'. 陌生网友昵称要有网感、各式各样；内容干净积极\n\n';
+    sys+=(mentioned?'7':'6')+'. 陌生网友昵称要有网感、各式各样；内容干净积极，回复可自然穿插真实emoji表情（如😂🔥🥺👍），符合抖音评论区风格，别硬凑\n\n';
     sys+='严格按格式，每行一条：\n回|||回复者昵称|||回复给谁|||回复内容\n\n只输出格式，不要解释。';
     var rep=await callApi([{role:'system',content:sys},{role:'user',content:'生成5-6条楼中楼回复'}]);
     rep.split('\n').forEach(function(line){
