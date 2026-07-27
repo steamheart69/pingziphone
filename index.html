@@ -442,7 +442,20 @@ document.getElementById('resetFontSettings').onclick=()=>{
 };
 
 // 存储管理
-document.getElementById('storageSettingsItem').onclick=()=>{document.getElementById('storagePage').classList.add('active');document.getElementById('storageSize').textContent='计算中...';IDB.getAll().then(function(data){let total=0;Object.keys(data).forEach(function(k){total+=(data[k]||'').length});const kb=(total/1024).toFixed(1),mb=(total/1024/1024).toFixed(2);document.getElementById('storageSize').textContent=total>1048576?mb+'MB':kb+'KB'}).catch(function(){document.getElementById('storageSize').textContent='读取失败'})}; document.getElementById('forceUpdateBtn').onclick=function(){uiConfirm('会清除页面缓存并重新拉取最新版本。你的聊天、好友、记忆等数据都存在本地不会丢失。确定更新吗？',function(){var st=document.getElementById('forceUpdateStatus');st.textContent='更新中...';var tasks=[];if('serviceWorker' in navigator){tasks.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}).catch(function(){}))}if(window.caches&&caches.keys){tasks.push(caches.keys().then(function(ks){return Promise.all(ks.map(function(k){return caches.delete(k)}))}).catch(function(){}))}Promise.all(tasks).catch(function(){}).then(function(){setTimeout(function(){location.reload()},300)})},{title:'强制拉取最新',okText:'更新'})};
+document.getElementById('storageSettingsItem').onclick=()=>{document.getElementById('storagePage').classList.add('active');document.getElementById('storageSize').textContent='计算中...';IDB.getAll().then(function(data){let total=0;Object.keys(data).forEach(function(k){total+=(data[k]||'').length});const kb=(total/1024).toFixed(1),mb=(total/1024/1024).toFixed(2);document.getElementById('storageSize').textContent=total>1048576?mb+'MB':kb+'KB'}).catch(function(){document.getElementById('storageSize').textContent='读取失败'})}; document.getElementById('forceUpdateBtn').onclick=function(){
+  uiConfirm('会清除页面缓存并重新拉取最新版本。你的聊天、好友、记忆等数据都存在本地不会丢失。确定更新吗？',function(){
+    var st=document.getElementById('forceUpdateStatus');st.textContent='更新中...';
+    var tasks=[];
+    if('serviceWorker' in navigator){tasks.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}).catch(function(){}))}
+    if(window.caches&&caches.keys){tasks.push(caches.keys().then(function(ks){return Promise.all(ks.map(function(k){return caches.delete(k)}))}).catch(function(){}))}
+    Promise.all(tasks).catch(function(){}).then(function(){
+      setTimeout(function(){
+        var base=location.href.split('#')[0].split('?')[0];
+        location.replace(base+'?_v='+Date.now());   // 关键：加时间戳，绕过 HTML 的 HTTP 缓存
+      },300);
+    })
+  },{title:'强制拉取最新',okText:'更新'})
+};
 document.getElementById('storageBack').onclick=()=>document.getElementById('storagePage').classList.remove('active');
 document.getElementById('exportDataBtn').onclick=()=>{const data={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);data[k]=localStorage.getItem(k)}const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='ai-phone-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url)};
 document.getElementById('importDataBtn').onclick=()=>document.getElementById('importFileInput').click();
