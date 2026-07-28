@@ -3831,7 +3831,17 @@ document.getElementById('convCmdBtn').onclick=function(){
 +'.dylr-gift-fly{position:absolute;left:50%;bottom:120px;transform:translateX(-50%);z-index:8;font-size:60px;pointer-events:none;animation:dylrGiftFly 1.6s ease forwards}'
 +'@keyframes dylrGiftFly{0%{opacity:0;transform:translateX(-50%) scale(.3)}20%{opacity:1;transform:translateX(-50%) scale(1.2)}55%{opacity:1;transform:translateX(-50%) scale(1)}100%{opacity:0;transform:translateX(-50%) scale(1) translateY(-90px)}}'
 +'.dylr-cmt.gift{background:linear-gradient(90deg,rgba(254,76,136,.55),rgba(255,180,60,.5))}'
-+'.dylr-cmt.gift .cn{color:#fff}';
++'.dylr-cmt.gift .cn{color:#fff}'
++'.dylr-typing{align-self:flex-start;background:rgba(0,0,0,.32);border-radius:14px;padding:9px 13px;display:flex;gap:5px;align-items:center;animation:dylrIn .3s ease}'
++'.dylr-typing span{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.85);animation:typingDot 1.2s infinite}'
++'.dylr-typing span:nth-child(2){animation-delay:.2s}'
++'.dylr-typing span:nth-child(3){animation-delay:.4s}'
++'.dylr-loading{position:absolute;left:0;right:0;top:44%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:14px;z-index:4;pointer-events:none;animation:dylrIn .3s ease}'
++'.dylr-loading-dots{display:flex;gap:8px}'
++'.dylr-loading-dots span{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.92);box-shadow:0 1px 4px rgba(0,0,0,.35);animation:typingDot 1.2s infinite}'
++'.dylr-loading-dots span:nth-child(2){animation-delay:.2s}'
++'.dylr-loading-dots span:nth-child(3){animation-delay:.4s}'
++'.dylr-loading-txt{color:rgba(255,255,255,.9);font-size:14px;letter-spacing:1px;text-shadow:0 1px 4px rgba(0,0,0,.6)}';
 document.head.appendChild(st);
 
   var room=document.createElement('div');
@@ -4048,8 +4058,17 @@ function liveAddCmt(type,name,text){
   }
 }
 
+        function liveShowRoomLoading(){
+      var body=document.querySelector('#dyLiveRoom .dylr-body');
+      if(!body||document.getElementById('dylrRoomLoading'))return;
+      var el=document.createElement('div');el.className='dylr-loading';el.id='dylrRoomLoading';
+      el.innerHTML='<div class="dylr-loading-dots"><span></span><span></span><span></span></div><div class="dylr-loading-txt">正在加载直播间</div>';
+      body.appendChild(el);
+    }
+    function liveRemoveRoomLoading(){var t=document.getElementById('dylrRoomLoading');if(t)t.remove()}
     function openLiveRoom(v){
 curLive=v;
+liveRemoveRoomLoading();
 document.getElementById('dyLiveRoom').classList.remove('dylr-clean');
 var _cr=document.getElementById('dylrCleanRestore');if(_cr)_cr.style.display='none';
 document.getElementById('dylrName').textContent=v.name||'';
@@ -4073,15 +4092,16 @@ if(v.started){
   document.getElementById('dylrSceneTxt').textContent='';
   document.getElementById('dylrScene').style.display='none';
   persistLive();
+  liveShowRoomLoading();
   liveAddCmt('sys','','欢迎来到「'+(v.name||'')+'」的直播间');
   liveGenChatter(true);
 }
     }
 
     async function liveGenChatter(opening){
-    var api=getApiSettings();
-    if(!api.apiUrl||!api.apiKey||!api.model)return;
-    var v=curLive;if(!v)return;
+var api=getApiSettings();
+if(!api.apiUrl||!api.apiKey||!api.model){liveRemoveRoomLoading();return}
+var v=curLive;if(!v){liveRemoveRoomLoading();return}
     var gp=getGlobalPromptText(),sys='';
     if(gp)sys+='[全局设定]\n'+gp+'\n\n';
         sys+='你是抖音直播间实时互动生成器。主播网名「'+(v.name||'')+'」，主播简介："'+(v.intro||'')+'"，直播间正在做的事："'+(v.roomDesc||'')+'"。\n';
@@ -4090,8 +4110,9 @@ sys+=livePersonaCtx();
 sys+=liveRelationCtx(v);
 sys+='请生成这个直播间此刻的画面描述，以及主播说的话和观众弹幕，模拟真实抖音直播氛围。\n要求：\n1. 第一行先输出一条画面描述（scene），用一句话具体描述此刻直播间画面长什么样、主播正在做什么，有画面感，20-40字\n2. 再生成8-11条互动，主播（host）穿插2-3条，观众弹幕（cmt）为主，并在其中穿插3-4条观众送礼物的记录（gift）\n3. 主播说话口语化、有主播那味儿（打招呼、感谢、回应、引导关注点赞等），紧扣直播间正在做的事\n4. 观众弹幕短、真实、有梗，昵称有网感，可带真实emoji\n5. 送礼物记录（gift）的礼物名必须从这些里选：小心心、玫瑰、棒棒糖、啤酒、跑车、火箭、皇冠、城堡、嘉年华；送礼物的观众昵称也是随机路人网友\n6. 内容干净积极\n7. 【铁律】观众弹幕（cmt）和送礼物（gift）的昵称必须是各种随机路人网友，绝对不能用「'+(getActivePersona()?getActivePersona().name:'用户')+'」这个名字发弹幕或送礼物，也不能冒充ta——ta是真人观众本人，只会自己手动发言，你绝不能替ta生成任何弹幕或礼物\n'+(opening?'8. 直播刚开始、观众陆续进来，主播只对直播间所有观众笼统地打个招呼（比如"欢迎大家来玩""新来的宝子扣个1"），绝对不要针对某一个具体观众打招呼，更绝对不要念出、喊出任何观众的名字或网名，也不要问某个观众"你怎么来了/进来干嘛"。必须严格服从上面的识别铁律：只有关系已公开的熟人才能被点名亲近互动，其余一律当陌生路人、只做笼统欢迎\n':'')+'\n严格按格式，每行一条，画面描述放第一行：\nscene|||画面描述|||一句英文绘图提示词(详细描述该画面:场景、主播外貌、动作、构图、光线等,英文逗号分隔)\nhost|||主播说的话\ncmt|||观众昵称|||弹幕内容\ngift|||观众昵称|||礼物名\n\n只输出，不要解释。';
     try{
-      var reply=await callApi([{role:'system',content:sys},{role:'user',content:'生成直播间实时互动'}]);
-      var lines=reply.split('\n').filter(function(l){return l.trim()});
+  var reply=await callApi([{role:'system',content:sys},{role:'user',content:'生成直播间实时互动'}]);
+  liveRemoveRoomLoading();
+  var lines=reply.split('\n').filter(function(l){return l.trim()});
       for(var k=0;k<lines.length;k++){
         var sp=lines[k].split('|||').map(function(s){return s.trim()});
         if(sp[0]==='scene'&&sp[1]){liveSetScene(sp[1],sp[2]);break}
@@ -4103,11 +4124,20 @@ if(p[0]==='host'&&p[1])liveAddCmt('host',v.name,p[1]);
       else if(p[0]==='cmt'&&p[1]&&p[2])liveAddCmt('cmt',p[1],p[2]);
       else if(p[0]==='gift'&&p[1]&&p[2]){var gg=LIVE_GIFTS.find(function(x){return x.n===p[2]})||{n:p[2],e:'🎁'};liveAddCmt('gift',p[1],'送出了 '+gg.e+' '+gg.n)}
       else continue;
-      await liveSleep(700+Math.floor(Math.random()*700));
-    }
-  }catch(e){console.error(e)}
+          await liveSleep(700+Math.floor(Math.random()*700));
+  }
+}catch(e){liveRemoveRoomLoading();console.error(e)}
+  liveRemoveRoomLoading();
     }
 
+    function liveShowTyping(){
+      var box=document.getElementById('dylrComments');
+      if(!box||document.getElementById('dylrTyping'))return;
+      var el=document.createElement('div');el.className='dylr-typing';el.id='dylrTyping';
+      el.innerHTML='<span></span><span></span><span></span>';
+      box.appendChild(el);box.scrollTop=box.scrollHeight;
+    }
+    function liveRemoveTyping(){var t=document.getElementById('dylrTyping');if(t)t.remove()}
     async function liveSend(){
 var inp=document.getElementById('dylrInput');var txt=inp.value.trim();
 if(!txt||liveChatBusy)return;
@@ -4116,7 +4146,7 @@ liveAddCmt('me',myName,txt);inp.value='';liveTickViewers();
 var api=getApiSettings();
 if(!api.apiUrl||!api.apiKey||!api.model)return;
 var v=curLive;if(!v)return;
-liveChatBusy=true;document.getElementById('dylrSend').disabled=true;
+liveChatBusy=true;document.getElementById('dylrSend').disabled=true;liveShowTyping();
 var gp=getGlobalPromptText(),sys='';
 if(gp)sys+='[全局设定]\n'+gp+'\n\n';
 sys+='你是抖音主播「'+(v.name||'')+'」，正在直播。主播简介："'+(v.intro||'')+'"，直播间正在做的事："'+(v.roomDesc||'')+'"。\n';
@@ -4126,6 +4156,7 @@ sys+=liveRelationCtx(v);
 sys+='观众「'+myName+'」在直播间发了弹幕："'+txt+'"。\n请生成主播对这条弹幕的回应和直播间此刻的互动，模拟真实抖音直播氛围。\n要求：\n1. 第一行先输出一条新的画面描述（scene），一句话描述主播回应时此刻画面变成什么样、TA在做什么，有画面感，20-40字\n2. 主播（host）念到并回应这条弹幕，像真实主播那样自然口语、简短，1-2句，严格遵守上面的识别铁律和恋情规则\n3. 再穿插4-6条其他观众弹幕（cmt）和2-3条送礼物（gift），昵称都是随机路人，绝对不能是「'+myName+'」也不能冒充ta\n4. 送礼物的礼物名从这些里选：小心心、玫瑰、棒棒糖、啤酒、跑车、火箭、皇冠、城堡、嘉年华\n严格按格式，每行一条，画面描述放第一行：\nscene|||画面描述\nhost|||主播说的话\ncmt|||观众昵称|||弹幕内容\ngift|||观众昵称|||礼物名\n\n只输出，不要解释。';
 try{
   var reply=await callApi([{role:'system',content:sys},{role:'user',content:'主播回应弹幕'}]);
+  liveRemoveTyping();
   var lines=reply.split('\n').filter(function(l){return l.trim()});
   for(var k=0;k<lines.length;k++){var sp=lines[k].split('|||').map(function(s){return s.trim()});if(sp[0]==='scene'&&sp[1]){if(curLive===v){curLive.image='';liveSetScene(sp[1]);document.getElementById('dylrBg').innerHTML='<div class="dylr-bg-txt" style="background:linear-gradient(150deg,#'+liveColor(v.name||v.id)+',#'+liveColor((v.name||v.id)+'x')+')"></div>';document.getElementById('dylrSceneGen').textContent=' 生成直播画面'}break}}
   for(var i=0;i<lines.length;i++){
@@ -4137,7 +4168,8 @@ try{
     else continue;
     await liveSleep(600);
   }
-}catch(e){console.error(e)}
+}catch(e){liveRemoveTyping();console.error(e)}
+liveRemoveTyping();
 liveChatBusy=false;document.getElementById('dylrSend').disabled=false;
     }
 
