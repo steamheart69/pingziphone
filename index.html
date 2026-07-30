@@ -381,13 +381,11 @@
 (function(){
   function setAppHeight(){
     var vvh=window.visualViewport?window.visualViewport.height:window.innerHeight;
-    var vvt=window.visualViewport?window.visualViewport.offsetTop:0;
-    // 用 visualViewport.height 作为真实可用高度
     document.documentElement.style.setProperty('--app-height',vvh+'px');
     var el=document.querySelector('.phone');
     if(el){
       el.style.height=vvh+'px';
-      el.style.transform='translateY('+(-vvt)+'px)';
+      el.style.transform='';
     }
   }
   setAppHeight();
