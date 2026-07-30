@@ -334,7 +334,7 @@
 .bb-tr-orig{font-size:15px;line-height:1.5;color:#222;word-break:break-word}
 .bb-tr-line{height:1px;background:rgba(184,152,242,.3);margin:7px 0}
 .bb-tr-trans{font-size:15px;line-height:1.5;color:#B898F2;word-break:break-word}</style>
-<div class="app-page" id="bubbleApp"><div class="nav-bar"><div class="nav-back" id="bubbleAppBack">‹</div><div class="nav-title">bubble</div><div class="nav-right" id="bubbleAddBtn">+<div class="bb-add-menu" id="bubbleAddMenu"><div class="bb-add-menu-item" id="bubbleSelPersonaBtn">选择人设</div><div class="bb-add-menu-item" id="bubbleCreateRoomBtn">创建聊天室</div></div></div></div><div class="bb-room-list" id="bubbleRoomList"></div></div>
+<div class="app-page" id="bubbleApp"><div class="nav-bar"><div class="nav-back" id="bubbleAppBack">‹</div><div class="nav-title">bubble</div><div class="nav-right" id="bubbleAddBtn">+<div class="bb-add-menu" id="bubbleAddMenu"><div class="bb-add-menu-item" id="bubbleSelPersonaBtn">选择人设</div><div class="bb-add-menu-item" id="bubbleCreateRoomBtn">创建聊天室</div><div class="bb-add-menu-item" id="bubbleOverseasItem" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px"><span>海外粉丝</span><div class="toggle-switch" id="bubbleOverseasToggle" style="transform:scale(.85)"></div></div></div></div></div><div class="bb-room-list" id="bubbleRoomList"></div></div>
 <div class="bb-page" id="bubbleRoom"><div class="bb-conv-header"><div class="bb-conv-back" id="bubbleRoomBack">‹</div><div class="bb-conv-title" id="bubbleRoomTitle"></div><div class="bb-conv-bg" id="bubbleBgBtn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 16l-4-4L7 19"/></svg></div></div><div class="bb-msgs" id="bubbleMsgs"></div><div class="bb-sticker-panel" id="bubbleStickerPanel"><div class="bb-sticker-grid" id="bubbleStickerGrid"></div></div><div class="bb-inputbar"><button class="bb-ibtn" id="bubblePlusBtn"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button><textarea class="bb-input" id="bubbleInput" rows="1" placeholder="输入消息..."></textarea><button class="bb-ibtn" id="bubbleStickerBtn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"/><path d="M8.5 14.5c1 1.2 2.2 1.8 3.5 1.8s2.5-.6 3.5-1.8"/></svg></button><button class="bb-send" id="bubbleSendBtn">发送</button></div><input type="file" id="bubbleImgInput" accept="image/*" style="display:none"><input type="file" id="bubbleBgInput" accept="image/*" style="display:none"></div>
 <div class="bb-page" id="bubbleFanDetail"><div class="bb-conv-header"><div class="bb-conv-back" id="bubbleFanBack">‹</div><div class="bb-conv-title">粉丝回复</div><div style="width:32px"></div></div><div class="bb-fan-list" id="bubbleFanList"></div></div>
 <div class="msg-edit-overlay" id="bubbleCreateOverlay" style="position:fixed;inset:0;z-index:99999"><div class="msg-edit-box" style="max-width:320px"><div style="font-size:17px;font-weight:600;margin-bottom:14px;color:#3d3355">创建聊天室</div><div style="font-size:13px;color:#999;margin-bottom:6px">聊天室名字</div><input id="bubbleRoomNameInput" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #d1d1d6;border-radius:8px;font-size:15px;outline:none;margin-bottom:12px" placeholder="给聊天室起个名字"><div style="font-size:13px;color:#999;margin-bottom:6px">粉丝名</div><input id="bubbleFanNameInput" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #d1d1d6;border-radius:8px;font-size:15px;outline:none" placeholder="粉丝群体的名字"><div class="msg-edit-btns" style="margin-top:16px"><button class="msg-edit-cancel" id="bubbleCreateCancel">取消</button><button class="msg-edit-save" id="bubbleCreateConfirm" style="background:#a68fd6">确认</button></div></div></div><div class="dy-app" id="douyinApp">
@@ -5872,7 +5872,7 @@ favToast('已转发到聊天');
 <script>
 /* ===== bubble（爱豆视角·粉丝聊天）===== */
 (function(){
-  var BB_FACES=['😀','😃','😄','😁','😆','😅','😂','🤣','🥲','😊','😇','🙂','🙃','😉','😌','😍','🥰','😘','😋','😛','😜','🤪','🤨','🧐','🤓','😎','🥳','😏','😶','🙄','😴','😪','🤗','🤭','🥺','😳','🤔','🤤','😐','🤠','🥸'];
+  function getBbOverseas(){return localStorage.getItem('bubbleOverseas_'+pid())==='1'} function setBbOverseas(v){if(v)localStorage.setItem('bubbleOverseas_'+pid(),'1');else localStorage.removeItem('bubbleOverseas_'+pid())} var BB_FACES=['😀','😃','😄','😁','😆','😅','😂','🤣','🥲','😊','😇','🙂','🙃','😉','😌','😍','🥰','😘','😋','😛','😜','🤪','🤨','🧐','🤓','😎','🥳','😏','😶','🙄','😴','😪','🤗','🤭','🥺','😳','🤔','🤤','😐','🤠','🥸'];
   var BB_DECO=['😀','😍','🥰','😘','😆','😊','🤩','🥳','😂','🤗','💜','💖','💕','✨','🌟','⭐','🎉','👏','🙌','💪','🌸','🌈','🔥','💗','😭','🥺','😻','💫','🍀','🎀'];
   function rndFace(){return BB_FACES[Math.floor(Math.random()*BB_FACES.length)]}
   function rndDeco(){var n=3+Math.floor(Math.random()*3);var s='';if(Math.random()<0.6){var one=BB_DECO[Math.floor(Math.random()*BB_DECO.length)];for(var i=0;i<n;i++)s+=one}else{for(var i=0;i<n;i++)s+=BB_DECO[Math.floor(Math.random()*BB_DECO.length)]}return s}
@@ -5895,7 +5895,7 @@ favToast('已转发到聊天');
   addMenu.onclick=function(e){e.stopPropagation()};
   document.addEventListener('click',function(){addMenu.classList.remove('show')});
 
-  document.getElementById('bubbleSelPersonaBtn').onclick=function(){
+  var _bbOvToggle=document.getElementById('bubbleOverseasToggle');_bbOvToggle.classList.toggle('on',getBbOverseas());document.getElementById('bubbleOverseasItem').onclick=function(e){e.stopPropagation();var v=!getBbOverseas();setBbOverseas(v);_bbOvToggle.classList.toggle('on',v)};   document.getElementById('bubbleSelPersonaBtn').onclick=function(){
     addMenu.classList.remove('show');
     var ps=getPersonas();
     if(!ps.length)return alert('请先在「聊天-我-切换人设」创建人设');
@@ -6080,7 +6080,7 @@ async function bbTranslate(idx,fanIdx,btn){
       sys+='\n请一次性生成12条粉丝回复，务必做到千人千面，每一条都是不同的活人：\n';
       sys+='【性格与话题·必须极度多样】12条里要混杂：闲聊的、大段表白爱意的、鼓励打气的、问私人问题的、聊八卦的、认真给事业建议的、发牢骚吐槽的、分享自己今天日常的、报告近况(考试/上班/失恋/生病)的、只敷衍打个卡的、掏心窝子说真心话的、催营业催更的、心疼偶像让他休息的、开玩笑调侃的、追问行程的、撒娇的、理性分析作品的、单纯报平安的……绝不允许好几条是同一个套路或同一种情绪。\n';
       sys+='【粉丝类型】事业粉、妈粉、女友粉、男友粉、cp粉、团粉、唯粉、毒唯等都要有，各自关注点和语气完全不同。\n';
-      sys+='【国籍与语言】粉丝来自世界很多国家，用各自母语发言：中国粉丝(中文)和韩国粉丝(韩文)最多，其次是日本粉丝(日文)和英语国家粉丝(英文)，也可零星出现其他语种。不同语言的粉丝要真的用那门语言写，符合各国粉圈的说话风格和用词习惯。\n';
+      if(getBbOverseas()){sys+='【国籍与语言】粉丝来自世界很多国家，用各自母语发言：中国粉丝(中文)和韩国粉丝(韩文)最多，其次是日本粉丝(日文)和英语国家粉丝(英文)，也可零星出现其他语种。不同语言的粉丝要真的用那门语言写，符合各国粉圈的说话风格和用词习惯。\n';}else{sys+='【语言】所有粉丝都是中国粉丝，全部用中文回复。禁止出现任何外语（韩语、日语、英语等都不行），全部使用自然的中文口语、中文网络用语和中文追星术语。\n';}
       sys+='【年龄段】从十几岁的学生到三四十岁的姐姐都有，语气、用词、关心的事随年龄不同(学生聊考试作业追星，上班族聊加班生活，妈粉像长辈一样叮嘱)。\n';
       sys+='【性别比例】约90%是女粉，男粉只占约1%(20条里最多1条男粉)。除非上面偶像人设里另有说明就按人设。\n';
       sys+='【铁律·禁止揪关键词】绝对禁止揪着偶像人设里写到的某个具体细节、爱好、口头禅或关键词反复提问或围绕它发挥(例如人设写了爱吃薯片，就绝对不能一堆粉丝都来问"今天吃薯片了吗")。粉丝是普通追随者，不会拿着人设逐条对号入座，聊的是他们自己真实想说的话。\n';
@@ -6116,7 +6116,7 @@ var reply=await callApi([{role:'system',content:sys},userMsg]);
       var fans=[];
       reply.split('\n').forEach(function(line){var p=line.split('|||').map(function(s){return s.trim()});if(p[0]==='粉丝'&&p[1]&&p[2])fans.push({name:p[1],text:p[2],avatar:rndFace()})});
       if(!fans.length){alert('生成失败，请重试')}
-else{await bbBatchTranslate(fans);var msgs=getMsgs(curRoom);msgs.push({type:'fanbatch',fromFace:rndFace(),deco:rndDeco(),fans:fans,t:Date.now()});saveMsgs(curRoom,msgs);renderMsgs();}
+else{if(getBbOverseas())await bbBatchTranslate(fans);var msgs=getMsgs(curRoom);msgs.push({type:'fanbatch',fromFace:rndFace(),deco:rndDeco(),fans:fans,t:Date.now()});saveMsgs(curRoom,msgs);renderMsgs();}
     }catch(e){console.error(e);alert('生成失败：'+(e.message||''))}
     bbBusy=false;sendBtn.disabled=false;sendBtn.textContent='发送';
     }
