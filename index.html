@@ -5317,7 +5317,34 @@ var relatedFs=[];
 try{relatedFs=getRelatedFriends(o.id).filter(function(f){return f.id!==o.id})}catch(e){}
 var friendPool=relatedFs;
 
-var charInfo=friendPool.map(function(f){return f.name+(f.persona?' - '+f.persona.slice(0,60):'')}).join('\n');
+function cpDyPairContext(oId,fId){
+  var parts=[];
+  try{
+    var rels=getRelationships();
+    for(var i=0;i<rels.length;i++){var r=rels[i];if((r.aId===oId&&r.bId===fId)||(r.aId===fId&&r.bId===oId)){if(r.relation)parts.push('你俩的关系：'+r.relation);break}}
+  }catch(e){}
+  try{
+    var allFs=getFriends();
+    getGroups().forEach(function(g){
+      if(g.memberIds&&g.memberIds.indexOf(oId)>=0&&g.memberIds.indexOf(fId)>=0){
+        var gh=getChatHistory(g.id).slice(-10);
+        if(gh.length)parts.push('你俩在群「'+g.name+'」里的对话：\n'+gh.map(function(m){
+          if(m.role==='user')return uName+':'+(m.content||'');
+          var mf=allFs.find(function(x){return x.id===m.senderId});
+          return (mf?mf.name:'?')+':'+(m.content||'');
+        }).join('\n'));
+      }
+    });
+  }catch(e){}
+  return parts.join('\n');
+}
+
+var charInfo=friendPool.map(function(f){
+  var block='【'+f.name+'】\n人设：'+(f.persona||'（无特别设定）');
+  var pc=cpDyPairContext(o.id,f.id);
+  if(pc)block+='\n'+pc;
+  return block;
+}).join('\n\n');
     var chat=getChatHistory(o.id).slice(-10).map(function(m){return m.role==='user'?uName+':'+m.content:o.name+':'+m.content}).join('\n');
     var mem=getMemories(o.id).slice(0,3).map(function(x){return x.content}).join('\n');
 
@@ -5333,7 +5360,8 @@ var charInfo=friendPool.map(function(f){return f.name+(f.persona?' - '+f.persona
 sys+='请一次性生成'+o.name+'抖音私信列表里的全部内容：\n\n';
 sys+='一、好友私信（FRIENDS）\n';
 sys+='【铁律】只能为以下两类人生成和'+o.name+'的私信对话：①上面列出的已绑定关系的好友；②'+o.name+'的人设里明确提到过的、有具体名字的NPC（如家人、同事、发小、恋人等）。除此之外的任何人都绝对不能出现，没有绑定关系、人设里也没提过的人一律不准和'+o.name+'私信。绝对不要生成和'+uName+'（真人本人）的私信对话，TA的对话框由系统自动同步真实聊天记录，你不用管。'+(charInfo?'':'如果上面没有已绑定关系的好友、人设里也没有可用的NPC，那就【不要生成任何好友私信】，只生成陌生人私信部分。')+'\n';
-sys+='为每个符合条件的人生成最近10条左右的私信对话（self='+o.name+'发的，other=对方发的），内容真实自然，像真人在抖音互发消息：分享视频、日常闲聊、约事情、发链接、开玩笑等。符合各自人设和关系。\n\n';
+sys+='为每个符合条件的人生成最近10条左右的私信对话（self='+o.name+'发的，other=对方发的），内容真实自然，像真人在抖音互发消息：分享视频、日常闲聊、约事情、发链接、开玩笑等。\n';
+sys+='【重要】上面每个好友都附了各自的人设、你俩的关系以及你俩在群里的共同对话记录。生成私信时必须紧扣这些信息：对话的语气、称呼、话题、亲疏程度都要贴合两人的真实人设和关系（比如是恋人就有恋人的味道、是死对头就互相拌嘴），并且和你俩已有的共同记忆保持连贯，不要写出与设定和记忆冲突的内容。\n\n';
     sys+='二、陌生人私信（STRANGERS）\n';
     sys+='生成10条陌生网友发给'+o.name+'的抖音私信。网名要有网感，内容多样：搭讪、夸视频、求关注互赞、卖东西的微商、想加联系方式、纯好奇提问、发错人、莫名其妙的、正常交朋友等。每条1-2句。\n\n';
     sys+='严格按以下格式输出：\n\n';
