@@ -380,12 +380,14 @@
 <script>// ===== 全屏高度适配（所有浏览器：用真实可视高度顶掉地址栏/键盘遮挡）=====
 (function(){
   function setAppHeight(){
-    var h=(window.visualViewport&&window.visualViewport.height)?window.visualViewport.height:window.innerHeight;
-    document.documentElement.style.setProperty('--app-height',h+'px');
-    if(window.visualViewport){
-      var offsetTop=window.visualViewport.offsetTop||0;
-      var el=document.querySelector('.phone');
-      if(el)el.style.transform='translateY('+(-offsetTop)+'px)';
+    var vvh=window.visualViewport?window.visualViewport.height:window.innerHeight;
+    var vvt=window.visualViewport?window.visualViewport.offsetTop:0;
+    // 用 visualViewport.height 作为真实可用高度
+    document.documentElement.style.setProperty('--app-height',vvh+'px');
+    var el=document.querySelector('.phone');
+    if(el){
+      el.style.height=vvh+'px';
+      el.style.transform='translateY('+(-vvt)+'px)';
     }
   }
   setAppHeight();
