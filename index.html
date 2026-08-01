@@ -6755,7 +6755,7 @@ favToast('已转发到聊天');
 <div class="lns-content">
 <div class="lns-section"><div class="lns-label">字数范围</div><div class="lns-group"><div class="lns-field"><div class="lns-row"><input class="lns-input" id="lnsMinWords" type="number" inputmode="numeric" placeholder="最少字数" style="flex:1"><span style="color:#b8a880;padding:0 6px">-</span><input class="lns-input" id="lnsMaxWords" type="number" inputmode="numeric" placeholder="最多字数" style="flex:1"></div></div></div></div>
 <div class="lns-section"><div class="lns-label">人称视角</div><div class="lns-radio" id="lnsPov"><div class="lns-radio-opt on" data-pov="2">第二人称</div><div class="lns-radio-opt" data-pov="1">第一人称</div><div class="lns-radio-opt" data-pov="3">第三人称</div></div></div>
-<div class="lns-section"><div class="lns-label">文风预设</div><div class="lns-preset-bar" id="lnsPresetBar"></div><div class="lns-group"><div class="lns-field"><textarea class="lns-textarea" id="lnsStyleInput" placeholder="描述你想要的文风，例如：清冷文艺、细腻温柔、暗黑压抑、轻松日常..."></textarea></div></div><div style="display:flex;gap:8px;margin-top:10px"><button class="lns-btn" id="lnsSavePreset" style="flex:1;background:#000">保存为预设</button><button class="lns-btn" id="lnsDelPreset" style="flex:1;background:#c45a4a;display:none">删除当前预设</button></div></div>
+<div class="lns-section"><div class="lns-label">文风预设</div><div class="lns-preset-bar" id="lnsPresetBar"></div><div class="lns-group"><div class="lns-field"><textarea class="lns-textarea" id="lnsStyleInput" placeholder="描述你想要的文风，例如：清冷文艺、细腻温柔、暗黑压抑、轻松日常..."></textarea></div></div><div style="display:flex;gap:8px;margin-top:10px"><button class="lns-btn" id="lnsSavePreset" style="flex:1">保存</button><button class="lns-btn" id="lnsDelPreset" style="flex:1;background:#c45a4a;display:none">删除当前预设</button></div></div>
 <div class="lns-section"><div class="lns-label">开场白（留空则随机生成）</div><div class="lns-group"><div class="lns-field"><textarea class="lns-textarea" id="lnsOpening" placeholder="故事的第一段话..."></textarea></div></div></div>
 <div class="lns-section"><div class="lns-label">挂载提示词（用户自定义）</div><div class="lns-group" id="lnsPromptList"></div></div>
 <div class="lns-section"><div class="lns-label">挂载世界书</div><div class="lns-group" id="lnsWbList"></div></div>
@@ -7088,7 +7088,7 @@ return msgs;
     // pov
     document.querySelectorAll('#lnsPov .lns-radio-opt').forEach(function(o){o.classList.toggle('on',o.getAttribute('data-pov')===(s.pov||'2'))});
     // presets
-    lnActivePresetId='';
+    lnActivePresetId=s.activePresetId||'';
     lnRenderPresets(s);
     // prompts
     lnRenderPromptList(s);
@@ -7195,6 +7195,7 @@ return msgs;
     s.maxWords=parseInt(document.getElementById('lnsMaxWords').value)||2000;
     s.style=document.getElementById('lnsStyleInput').value.trim();
     s.opening=document.getElementById('lnsOpening').value.trim();
+    s.activePresetId=lnActivePresetId;
     var povEl=document.querySelector('#lnsPov .lns-radio-opt.on');
     s.pov=povEl?povEl.getAttribute('data-pov'):'2';
     lnSaveSettings(s);
@@ -7346,7 +7347,8 @@ return msgs;
   +'#longNarrSettings .lns-preset-tag { background: #fafafa; border-color: #dbdbdb; color: #8e8e8e; }\n'
   +'#longNarrSettings .lns-preset-tag.on { background: #262626; color: #fff; border-color: #262626; }\n'
   +'#longNarrSettings .lns-btn { background: #000; color: #fff; }\n'
-  +'#longNarrSettings .lns-btn.danger { background: #ed4956; }';
++'#longNarrSettings #lnsSavePreset { background: #000; color: #fff; }\n'
++'#longNarrSettings .lns-btn.danger { background: #ed4956; }';
 
   function applyLnCss(css){
     var el=document.getElementById('customLnCssStyle');
