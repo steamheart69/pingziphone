@@ -563,7 +563,14 @@ localStorage.removeItem=function(k){
 // ===== 启动时：从 IndexedDB 恢复数据到 localStorage =====
 (function(){
  function _removeGate(){var g=document.getElementById('_loadingGate');if(g&&g.parentNode)g.parentNode.removeChild(g)}
-setTimeout(function(){if(!_idbReady){_idbReady=true;_removeGate();try{renderCL()}catch(e){}try{updateMe()}catch(e){}}},6000); IDB.ready.then(function(){return IDB.getAll()}).then(function(data){
+setTimeout(function(){
+    _removeGate();
+    if(!_idbReady){
+        _idbReady=true;
+        try{renderCL()}catch(e){}
+        try{updateMe()}catch(e){}
+    }
+}, 6000); IDB.ready.then(function(){return IDB.getAll()}).then(function(data){
   if(localStorage.getItem('_skip_idb_restore')){localStorage.removeItem('_skip_idb_restore');_idbReady=true;_removeGate(); for(var i=0;i<localStorage.length;i++){var kk=localStorage.key(i);if(kk!=='_skip_idb_restore')IDB.put(kk,localStorage.getItem(kk))}return}
   _idbData=data;
 var keys=Object.keys(data);
@@ -600,7 +607,10 @@ keys.forEach(function(k){
   }).catch(function(e){
     console.error('IDB初始化失败:',e);
     _idbReady=false;
-  });
+    _removeGate();
+    try{renderCL()}catch(e){}
+    try{updateMe()}catch(e){}
+});
 })();window.onerror=function(msg,url,line,col,err){alert('报错：'+msg+'\n行:'+line+' 列:'+col);return false};
 function getTimeContext(){if(localStorage.getItem('timeAwareness')!=='1')return '';var now=new Date();var week=['日','一','二','三','四','五','六'];var h=now.getHours(),m=('0'+now.getMinutes()).slice(-2);var period='';if(h>=0&&h<6)period='凌晨';else if(h>=6&&h<9)period='早晨';else if(h>=9&&h<12)period='上午';else if(h>=12&&h<14)period='中午';else if(h>=14&&h<18)period='下午';else if(h>=18&&h<20)period='傍晚';else period='夜晚';return '[当前现实时间] '+now.getFullYear()+'年'+(now.getMonth()+1)+'月'+now.getDate()+'日 星期'+week[now.getDay()]+' '+period+h+':'+m+'\n你和所有角色都能自然感知到这个时间。根据时段自然调整状态和话题（凌晨该困、早上刚醒、工作日可能在忙、周末放松等），但不要刻意报时，像真人一样对时间有隐性感知。'}
 const _cache={};const LS={get(k,d='[]'){if(_cache[k]!==undefined)return JSON.parse(JSON.stringify(_cache[k]));var raw=localStorage.getItem(k);var idbRaw=_idbData[k];if(idbRaw&&(!raw||idbRaw.length>raw.length))raw=idbRaw;if(raw==null&&!_idbReady)return JSON.parse(d);const v=JSON.parse(raw||d);_cache[k]=v;return JSON.parse(JSON.stringify(v))},set(k,v){_cache[k]=v;try{localStorage.setItem(k,JSON.stringify(v))}catch(e){if(_idbReady)IDB.put(k,JSON.stringify(v))}},rm(k){delete _cache[k];localStorage.removeItem(k)}};
