@@ -3981,19 +3981,27 @@ function del(topComment,replyObj){
     return keys;
   }
   function albumReadArr(k){
-    var raw=localStorage.getItem(k);
-    if(raw==null){try{if(_idbData)raw=_idbData[k]}catch(e){}}
-    if(!raw)return null;
-    var v;try{v=JSON.parse(raw)}catch(e){return null}
-    return Array.isArray(v)?v:null;
+    try{
+      if(_cache[k]!==undefined){var cv=_cache[k];return Array.isArray(cv)?JSON.parse(JSON.stringify(cv)):null}
+      var raw=localStorage.getItem(k);
+      var idbRaw;try{idbRaw=_idbData[k]}catch(e2){}
+      if(idbRaw&&(!raw||idbRaw.length>raw.length))raw=idbRaw;
+      if(!raw)return null;
+      var v=JSON.parse(raw);
+      return Array.isArray(v)?v:null;
+    }catch(e){return null}
   }
   function albumReadObj(k){
-  var raw=localStorage.getItem(k);
-  if(raw==null){try{if(_idbData)raw=_idbData[k]}catch(e){}}
-  if(!raw)return null;
-  var v;try{v=JSON.parse(raw)}catch(e){return null}
-  return (v&&typeof v==='object'&&!Array.isArray(v))?v:null;
-}
+    try{
+      if(_cache[k]!==undefined){var cv=_cache[k];return(cv&&typeof cv==='object'&&!Array.isArray(cv))?JSON.parse(JSON.stringify(cv)):null}
+      var raw=localStorage.getItem(k);
+      var idbRaw;try{idbRaw=_idbData[k]}catch(e2){}
+      if(idbRaw&&(!raw||idbRaw.length>raw.length))raw=idbRaw;
+      if(!raw)return null;
+      var v=JSON.parse(raw);
+      return(v&&typeof v==='object'&&!Array.isArray(v))?v:null;
+    }catch(e){return null}
+  }
 function albumCollect(){
   var out=[],seen={};
   function push(u){if(u&&typeof u==='string'&&!seen[u]){seen[u]=1;out.push(u)}}
