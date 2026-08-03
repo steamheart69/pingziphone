@@ -1092,11 +1092,13 @@ alert('导入成功：'+addedCount+'个新表情'+(newStickers.length-addedCount
         var cv=document.createElement('canvas');cv.width=600;cv.height=600;
         var ctx=cv.getContext('2d');
         ctx.fillStyle='#ffffff';ctx.fillRect(0,0,600,600);
-        ctx.fillStyle='#222222';ctx.font='500 28px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
+        ctx.font='500 28px Arial,sans-serif';
+        ctx.fillStyle='#222222';
         ctx.textAlign='center';ctx.textBaseline='middle';
-        var words=desc.trim();var lineH=38;var maxW=520;var lines=[];var tmp='';
-        for(var ci=0;ci<words.length;ci++){var test=tmp+words[ci];if(ctx.measureText(test).width>maxW){lines.push(tmp);tmp=words[ci]}else tmp=test}
+        var words=desc.trim();var lineH=40;var maxW=500;var lines=[];var tmp='';
+        for(var ci=0;ci<words.length;ci++){var test=tmp+words[ci];var w=ctx.measureText(test).width;if(w>maxW&&tmp){lines.push(tmp);tmp=words[ci]}else{tmp=test}}
         if(tmp)lines.push(tmp);
+        if(!lines.length)lines=[words];
         var startY=300-((lines.length-1)*lineH)/2;
         lines.forEach(function(line,li){ctx.fillText(line,300,startY+li*lineH)});
         var dataUrl=cv.toDataURL('image/png');
@@ -1105,7 +1107,6 @@ alert('导入成功：'+addedCount+'个新表情'+(newStickers.length-addedCount
         saveChatHistory(curId,h);
         if(curType==='f'){var fs=getFriends();var f=fs.find(function(x){return x.id===curId});if(f){f.lastMsg='[图片]';f.lastMsgTime=timeNow();saveFriendsData(fs)}}
         else{var gs=getGroups();var g=gs.find(function(x){return x.id===curId});if(g){g.lastMsg='[图片]';g.lastMsgTime=timeNow();saveGroups(gs)}}
-        renderMsgs();
         renderMsgs();
       });
     }
